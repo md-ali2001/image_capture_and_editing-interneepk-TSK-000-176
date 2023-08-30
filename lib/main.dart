@@ -1,13 +1,25 @@
-import 'package:camera/camera.dart';
+
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_cropper/image_cropper.dart';
+import 'package:image_picker/image_picker.dart';
 
-late  CameraDescription camera;
+enum AppState
+{
+  free,
+  cropped,
+  picked
+}
 
 
 
-Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  final cameras = await availableCameras();
+
+
+
+void main() {
+
+
 
 
 
@@ -46,7 +58,7 @@ class MyApp extends StatelessWidget {
         //
         // This works for code too, not just values: Most code changes can be
         // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
       ),
       home: const MyHomePage(title: 'IMAGE CAPTURE APP TSK-000-176'),
@@ -73,48 +85,81 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  late CameraController _controller;
-  //late Future<void> _initializeControllerFuture;
 
-  @override
- void initState()  {
-    super.initState();
-    _controller = CameraController(camera,
-      ResolutionPreset.medium,
-    );
-     _controller.initialize().then((_)
-         {
-           if(!mounted)
-             {
-               return;
-             }
-           setState(() {
-             
-           });
-
-         }
-
-
-     ).catchError((Object e){});
+  late AppState state;
+  File ? image;
 
 
 
-    // To display the current output from the Camera,
-    // create a CameraController.
+  final picker = ImagePicker();
+
+  Future getImage() async
+  {
+    final pickerImage=await picker.pickImage(source: ImageSource.camera);
+
+    setState(() {
+      if(pickerImage!=null)
+        {
+
+         image=File(pickerImage.path);
+         setState(() {
+           state=AppState.picked;
+         });
+        }
+    });
+
+  }
+
+  Future croppedimage() async {
+    File? croppedFile=(await ImageCropper().cropImage(
+
+      sourcePath: image!.path,
+      aspectRatioPresets:
+      [
+        CropAspectRatioPreset.square,
+        CropAspectRatioPreset.ratio3x2,
+        CropAspectRatioPreset.original,
+        CropAspectRatioPreset.ratio4x3,
+        CropAspectRatioPreset.ratio16x9
+      ],
+      uiSettings: [
+        AndroidUiSettings(
+            toolbarTitle: 'Cropper',
+            toolbarColor: Colors.deepOrange,
+            toolbarWidgetColor: Colors.white,
+            initAspectRatio: CropAspectRatioPreset.original,
+            lockAspectRatio: false),
+        IOSUiSettings(
+          title: 'Cropper',
+        ),
+        WebUiSettings(
+          context: context,
+        ),
+      ],
 
 
-    @override
-    void dispose() {
-      // Dispose of the controller when the widget is disposed.
-      _controller.dispose();
-      super.dispose();
-    }
-
+    )) as File?;
 
 
   }
 
+
+
+
+
+
+
+
+
   @override
+
+  void initState()
+  {
+    super.initState();
+    state=AppState.free;
+
+
+  }
   Widget build(BuildContext context) {
     // This method is rerun every time setState is called, for instance as done
     // by the _incrementCounter method above.
@@ -122,7 +167,8 @@ class _MyHomePageState extends State<MyHomePage> {
     // The Flutter framework has been optimized to make rerunning build methods
     // fast, so that you can just rebuild anything that needs updating rather
     // than having to individually change instances of widgets.
-    return Scaffold(
+    return MaterialApp(
+      home:Scaffold(
       appBar: AppBar(
         // TRY THIS: Try changing the color here to a specific color (to
         // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
@@ -135,7 +181,19 @@ class _MyHomePageState extends State<MyHomePage> {
       body: Center(
         // Center is a layout widget. It takes a single child and positions it
         // in the middle of the parent.
-        child: Column(
+        child: image == null? Text('no image selected') : Image.file(image!)),
+
+        floatingActionButton: FloatingActionButton(onPressed: () { if(state==AppState.free){getImage();}
+        else if(state==AppState.picked){croppedimage();}
+        else if(state==AppState.cropped){getImage();}
+
+
+        },
+          child: Icon(Icons.camera)
+          ,
+
+        ),
+
           // Column is also a layout widget. It takes a list of children and
           // arranges them vertically. By default, it sizes itself to fit its
           // children horizontally, and tries to be as tall as its parent.
@@ -149,14 +207,18 @@ class _MyHomePageState extends State<MyHomePage> {
           // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
           // action in the IDE, or press "p" in the console), to see the
           // wireframe for each widget.
+    ),
 
-        ),
-      ),
+    );
+
+
+
       // floatingActionButton: FloatingActionButton(
       //   onPressed: _incrementCounter,
       //   tooltip: 'Increment',
       //   child: const Icon(Icons.add),
       // ), // This trailing comma makes auto-formatting nicer for build methods.
-    );
+
+
   }
 }
