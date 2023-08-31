@@ -93,25 +93,49 @@ class _MyHomePageState extends State<MyHomePage> {
 
   final picker = ImagePicker();
 
+  Widget buildiconbutton()
+  {
+    if(state==AppState.free)
+      {
+        return const Icon(Icons.add);
+      }
+
+    else if(state==AppState.picked)
+    {
+      return const Icon(Icons.crop);
+    }
+
+    else if(state==AppState.cropped)
+    {
+      return const Icon(Icons.clear);
+    }
+
+    else
+      {
+        return const SizedBox();
+      }
+  }
+
+
   Future getImage() async
   {
     final pickerImage=await picker.pickImage(source: ImageSource.camera);
+    image=pickerImage!=null? File(pickerImage.path) : null;
 
-    setState(() {
-      if(pickerImage!=null)
+      if(image!=null)
         {
 
-         image=File(pickerImage.path);
+
          setState(() {
            state=AppState.picked;
          });
         }
-    });
+
 
   }
 
   Future croppedimage() async {
-    File? croppedFile=(await ImageCropper().cropImage(
+    CroppedFile? croppedfile=await ImageCropper().cropImage(
 
       sourcePath: image!.path,
       aspectRatioPresets:
@@ -132,15 +156,36 @@ class _MyHomePageState extends State<MyHomePage> {
         IOSUiSettings(
           title: 'Cropper',
         ),
-        WebUiSettings(
-          context: context,
-        ),
+
       ],
 
 
-    )) as File?;
+    );
 
 
+
+
+    if(croppedfile!=null)
+      {
+
+       image = File(croppedfile.path);
+        setState(() {
+          state=AppState.cropped;
+        });
+
+      }
+
+
+
+  }
+
+
+  void clearimage()
+  {
+    image=null;
+    setState(() {
+      state=AppState.free;
+    });
   }
 
 
@@ -178,21 +223,22 @@ class _MyHomePageState extends State<MyHomePage> {
         // the App.build method, and use it to set our appbar title.
         title: Text(widget.title),
       ),
-      body: Center(
+    floatingActionButton: FloatingActionButton(onPressed: () { if(state==AppState.free){getImage();}
+    else if(state==AppState.picked){croppedimage();}
+    else if(state==AppState.cropped){clearimage();}
+
+
+    },
+    child: buildiconbutton()
+    ,
+
+    ),
+      body:  Center(
         // Center is a layout widget. It takes a single child and positions it
         // in the middle of the parent.
-        child: image == null? Text('no image selected') : Image.file(image!)),
-
-        floatingActionButton: FloatingActionButton(onPressed: () { if(state==AppState.free){getImage();}
-        else if(state==AppState.picked){croppedimage();}
-        else if(state==AppState.cropped){getImage();}
+        child: image != null?  Image.file(image!): const SizedBox(),
 
 
-        },
-          child: Icon(Icons.camera)
-          ,
-
-        ),
 
           // Column is also a layout widget. It takes a list of children and
           // arranges them vertically. By default, it sizes itself to fit its
@@ -208,7 +254,7 @@ class _MyHomePageState extends State<MyHomePage> {
           // action in the IDE, or press "p" in the console), to see the
           // wireframe for each widget.
     ),
-
+      ),
     );
 
 
