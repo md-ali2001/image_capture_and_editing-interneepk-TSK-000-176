@@ -4,6 +4,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 enum AppState
 {
@@ -167,8 +169,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
     if(croppedfile!=null)
       {
+image=File(croppedfile.path);
 
-       image = File(croppedfile.path);
         setState(() {
           state=AppState.cropped;
         });
@@ -233,10 +235,29 @@ class _MyHomePageState extends State<MyHomePage> {
     ,
 
     ),
+      
+      
+      
+      
+      
+      
+      
       body:  Center(
         // Center is a layout widget. It takes a single child and positions it
         // in the middle of the parent.
-        child: image != null?  Image.file(image!): const SizedBox(),
+        child: Column(
+          
+          children: [
+            Container(width:1000,height:350,child:image != null?  Image.file(image!): const SizedBox()),
+            ElevatedButton(onPressed: () async{ XFile? shareimage=await picker.pickImage(source: ImageSource.gallery);
+
+
+              if (shareimage==null)return;
+              Share.shareXFiles([shareimage]);
+              }, child: Text("SHARE IMAGE"),)
+          ],
+          
+        )
 
 
 
@@ -254,6 +275,8 @@ class _MyHomePageState extends State<MyHomePage> {
           // action in the IDE, or press "p" in the console), to see the
           // wireframe for each widget.
     ),
+        
+        
       ),
     );
 
